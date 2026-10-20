@@ -1,0 +1,29 @@
+# Copiar a /etc/nginx/sites-available/app y activarlo con un enlace en sites-enabled
+server {
+    listen 80;
+    server_name app.test;
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    server_name app.test;
+
+    ssl_certificate     /etc/nginx/ssl/app.crt;
+    ssl_certificate_key /etc/nginx/ssl/app.key;
+
+    # Solo la carpeta public/ es visible desde fuera
+    root  /var/www/tienda-app/public;
+    index index.php;
+
+    # Si no es un archivo que exista (una imagen, un CSS…), se lo pasa al controlador frontal
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+
+    # Los .php no se envían: se ejecutan en PHP-FPM (FastCGI, por un socket)
+    location ~ \.php$ {
+        include snippets/fastcgi-php.conf;
+        fastcgi_pass unix:/run/php/php8.3-fpm.sock;
+    }
+}
